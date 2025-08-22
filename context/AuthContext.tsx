@@ -4,6 +4,7 @@ import { getTeacherByEmail } from '../services/supabaseService';
 import type { AuthUser } from '../types';
 import type { Session } from '@supabase/supabase-js';
 
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 interface AuthContextType {
@@ -20,53 +21,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // This function centralizes session processing
   const processSession = async (session: Session | null) => {
     if (!session?.user) {
       setUser(null);
       return;
     }
 
-    const teacher = await getTeacherByEmail(session.user.email!);
+    const { email } = session.user;
+    
+    // Check if the logged-in user is the admin
+    if (email && ADMIN_EMAIL && email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      setUser({ name: 'Admin', email, isAdmin: true });
+      return;
+    }
+
+    // Otherwise, check if they are a registered teacher
+    const teacher = await getTeacherByEmail(email!);
     if (teacher) {
-      const authUser: AuthUser = { name: teacher.name, email: teacher.email, isAdmin: false };
-      setUser(authUser);
+      setUser({ name: teacher.name, email: teacher.email, isAdmin: false });
     } else {
-      console.warn(`User ${session.user.email} logged in but is not a registered teacher.`);
-      // Optionally log them out if they are not a teacher
+      // If a user is authenticated with Google but not in the teachers table, log them out.
+      console.warn(`User ${email} is not a registered teacher. Logging out.`);
       await supabase.auth.signOut();
       setUser(null);
     }
   };
-
+  
   useEffect(() => {
     setIsLoading(true);
-    // Check for local admin session first
-    try {
-      const savedUser = sessionStorage.getItem('admin_user');
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-        setIsLoading(false);
-        return;
-      }
-    } catch (error) {
-        console.error("Failed to parse admin user from session storage", error);
-        sessionStorage.removeItem('admin_user');
-    }
 
-    // Then check for Supabase session
+    // Check for an existing session on initial load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        processSession(session).finally(() => setIsLoading(false));
-      } else {
-        setIsLoading(false);
-      }
+      processSession(session).finally(() => setIsLoading(false));
     });
 
+    // Listen for auth state changes (login, logout)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      // Clear admin session if a Supabase user logs in/out
-      sessionStorage.removeItem('admin_user');
       await processSession(session);
-      setIsLoading(false);
+      setIsLoading(false); // Ensure loading is false after any auth change
     });
 
     return () => {
@@ -75,32 +68,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-    });
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
     if (error) {
-        console.error("Google login error:", error);
-        throw new Error('Gagal memulai login Google.');
+      console.error("Google login error:", error);
+      throw new Error('Gagal memulai login Google.');
     }
   };
 
   const loginWithPassword = async (password: string) => {
-    if (password === ADMIN_PASSWORD) {
-      const adminUser: AuthUser = { name: 'Admin', isAdmin: true };
-      sessionStorage.setItem('admin_user', JSON.stringify(adminUser));
-      setUser(adminUser);
-    } else {
+    // First, verify the password entered in the form matches the env var
+    if (password !== ADMIN_PASSWORD) {
       throw new Error('Kata sandi admin tidak valid.');
+    }
+    
+    // Then, use the admin credentials from env vars to sign in to Supabase
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+        throw new Error('Konfigurasi email atau kata sandi admin tidak ditemukan.');
+    }
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email: ADMIN_EMAIL,
+      password: ADMIN_PASSWORD,
+    });
+
+    if (error) {
+        console.error("Admin sign in error:", error);
+        throw new Error(`Gagal login sebagai admin. Pesan: ${error.message}`);
     }
   };
 
   const logout = async () => {
-    sessionStorage.removeItem('admin_user');
     const { error } = await supabase.auth.signOut();
     if (error) {
-        console.error("Sign out error:", error);
+      console.error("Sign out error:", error);
     }
-    setUser(null);
+    // The onAuthStateChange listener will handle setting the user to null
   };
 
   return (

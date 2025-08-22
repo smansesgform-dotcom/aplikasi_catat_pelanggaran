@@ -166,6 +166,14 @@ Setiap aplikasi butuh tempat untuk menyimpan data (seperti daftar siswa, guru, d
         - **Allowed operations**: Centang `SELECT` saja.
         - **Policy definition**: Biarkan kosong atau tulis `true`
         - Klik **"Review"**, lalu **"Save policy"**.
+5.  **Buat Akun Khusus Admin (WAJIB)**:
+    - Di *dashboard* Supabase, pergi ke **Authentication** (ikon pengguna) di menu sebelah kiri.
+    - Di bawah tab **"Users"**, klik tombol **"+ Add user"**.
+    - **Metode**: Pilih **Email**.
+    - **Email**: Masukkan alamat email yang akan Anda gunakan untuk admin (misalnya, `admin-sekolah@youremail.com` - *email ini tidak harus benar-benar ada*). **Salin (copy) email ini**, kita akan membutuhkannya untuk variabel `VITE_ADMIN_EMAIL`.
+    - **Password**: Masukkan kata sandi yang kuat. **PENTING**: Gunakan kata sandi yang sama persis dengan yang akan Anda atur di variabel `VITE_ADMIN_PASSWORD`.
+    - Biarkan **"Auto Confirm User"** dalam keadaan **ON**.
+    - Klik **"Create user"**.
 
 "Otak" dan "lemari arsip" aplikasi Anda sekarang sudah siap!
 
@@ -235,21 +243,16 @@ Sekarang saatnya "menerbitkan" aplikasi Anda agar bisa diakses oleh siapa saja m
         - Tempel di kolom *value* di Vercel.
     - **`VITE_SCHOOL_NAME`**: Isi dengan nama lengkap sekolah Anda (misal: `Sekolah Menengah Atas Impian Bangsa`).
     - **`VITE_SCHOOL_SHORT_NAME`**: Isi dengan nama singkat sekolah (misal: `SMA Impian Bangsa`).
-    - **`VITE_ADMIN_PASSWORD`**: **Buat kata sandi yang kuat dan unik** untuk akun admin Anda. Inilah kata sandi yang akan Anda gunakan untuk login sebagai admin.
+    - **`VITE_ADMIN_EMAIL`**: Isi dengan email yang Anda buat untuk akun admin di Supabase Auth pada Langkah 2.5.
+    - **`VITE_ADMIN_PASSWORD`**: **Buat kata sandi yang kuat dan unik**. Kata sandi ini HARUS SAMA dengan yang Anda atur untuk user admin di Supabase Auth.
     - Pastikan Anda menambahkan semua variabel di atas.
 5.  **Deploy**: Klik tombol **"Deploy"**. Vercel akan mulai membangun dan mempublikasikan aplikasi Anda. Proses ini mungkin memakan waktu beberapa menit.
 
 ---
 
-### Langkah 5: Sentuhan Terakhir
+### Langkah 5: Selesai!
 
 Setelah Vercel selesai, aplikasi Anda sudah online! Vercel akan memberikan Anda sebuah URL (misalnya, `nama-proyek-anda.vercel.app`).
-
-**Salin (copy) URL aplikasi Anda dari Vercel** dan tambahkan sebagai **Redirect URL** tambahan di Supabase dan Google Cloud Console jika diperlukan, terutama untuk memastikan login berfungsi dari domain baru Anda.
-
-## Selesai!
-
-Aplikasi Anda kini sudah sepenuhnya berfungsi dan online! Anda bisa mengunjungi URL dari Vercel untuk mulai menggunakannya.
 
 - **Untuk login sebagai guru**: Gunakan tombol "Masuk dengan Google". Pastikan email Google Anda sudah ditambahkan ke tabel `teachers` di Supabase.
 - **Untuk login sebagai admin**: Gunakan form login admin dan masukkan kata sandi yang Anda atur di Vercel (`VITE_ADMIN_PASSWORD`).
@@ -257,6 +260,6 @@ Aplikasi Anda kini sudah sepenuhnya berfungsi dan online! Anda bisa mengunjungi 
 ## Catatan Tambahan: Batasan Unggah Data
 
 Supabase memiliki batasan teknis di mana aplikasi klien (seperti aplikasi web ini) hanya dapat mengirim sekitar 1000 baris data dalam satu kali permintaan. Aplikasi ini menangani batasan tersebut sebagai berikut:
-- **Unggah Data Excel**: Untuk menjaga integritas data dan memberikan umpan balik yang baik, aplikasi memproses data baris per baris. Ini memungkinkan unggahan file besar namun mungkin memakan waktu lebih lama.
+- **Unggah Data Excel**: Untuk menjaga integritas data dan memberikan umpan balik yang baik, aplikasi memproses data dalam potongan-potongan kecil. Ini memungkinkan unggahan file besar namun mungkin memakan waktu lebih lama.
 - **Backup & Restore**: Fitur backup dan restore dapat menangani data lebih dari 1000 baris dengan memprosesnya secara cerdas dalam potongan-potongan yang lebih kecil.
 - **Rekomendasi**: Jika Anda memiliki file Excel dengan lebih dari 1000 baris, disarankan untuk membaginya menjadi beberapa file yang lebih kecil untuk proses unggah yang lebih lancar.
