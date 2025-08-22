@@ -1,17 +1,15 @@
-
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Mocked env vars - in a real build setup, this would come from process.env
-const SCHOOL_NAME = "Sekolah Menengah Atas Impian Bangsa";
+const SCHOOL_NAME = process.env.VITE_SCHOOL_NAME || "Aplikasi Pelanggaran";
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -34,6 +32,12 @@ const Header: React.FC = () => {
                   className={({ isActive }) => `${linkBaseClass} ${isActive ? activeLinkClass : inactiveLinkClass}`}
                 >
                   Catat Pelanggaran
+                </NavLink>
+                <NavLink
+                  to="/reports"
+                  className={({ isActive }) => `${linkBaseClass} ${isActive ? activeLinkClass : inactiveLinkClass}`}
+                >
+                  Laporan
                 </NavLink>
                 {user.isAdmin && (
                   <NavLink

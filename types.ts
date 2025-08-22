@@ -26,10 +26,43 @@ export interface ViolationRecord {
   violation_ids: number[];
   teacher_id: number;
   timestamp: string;
+  photo_urls?: string[];
 }
 
 export interface AuthUser {
   name: string;
   email?: string;
   isAdmin: boolean;
+}
+
+export interface ReportFilters {
+  startDate: string;
+  endDate: string;
+  class: string;
+  studentIds: number[];
+  violationId: string;
+  teacherId: string;
+}
+
+export interface EnrichedViolationRecord {
+  id: number;
+  timestamp: string;
+  studentName: string;
+  studentClass: string;
+  violations: string;
+  totalPoints: number;
+  teacherName: string;
+}
+
+export interface StudentSummary {
+  studentName: string;
+  studentClass: string;
+  incidentCount: number;
+  totalPoints: number;
+}
+
+export interface AllDataBackup {
+  students: Student[];
+  teachers: Teacher[];
+  violations: Violation[];
 }

@@ -1,5 +1,7 @@
 {
   "name": "Aplikasi Pencatat Pelanggaran Siswa",
   "description": "A web application to record student violations, manage student, teacher, and violation data, with an admin panel for bulk data uploads via Excel.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

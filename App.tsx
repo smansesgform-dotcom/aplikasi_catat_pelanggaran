@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import ViolationLogger from './pages/ViolationLogger';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import Reports from './pages/Reports';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -27,6 +27,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <ViolationLogger />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/reports" 
+        element={
+          <ProtectedRoute>
+            <Reports />
           </ProtectedRoute>
         } 
       />
