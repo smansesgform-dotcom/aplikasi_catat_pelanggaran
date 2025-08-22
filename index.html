@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Mobile specific meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://via.placeholder.com/180">
+    <meta name="theme-color" content="#1E40AF">
+
     <title>Pencatat Pelanggaran Siswa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -20,6 +26,34 @@
   }
 }
 </script>
+<style>
+  /* Global style for responsive tables */
+  .responsive-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Add subtle shadows to indicate scrollability on mobile */
+    background:
+      linear-gradient(to right, white 30%, rgba(255,255,255,0)),
+      linear-gradient(to right, rgba(255,255,255,0), white 70%) 100% 0,
+      radial-gradient(farthest-side at 0% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)),
+      radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)) 100% 0;
+    background-repeat: no-repeat;
+    background-color: white;
+    background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+    background-attachment: local, local, scroll, scroll;
+  }
+  .dark .responsive-table-container {
+    background:
+      linear-gradient(to right, #1f2937 30%, rgba(31,41,55,0)),
+      linear-gradient(to right, rgba(31,41,55,0), #1f2937 70%) 100% 0,
+      radial-gradient(farthest-side at 0% 50%, rgba(0,0,0,.4), rgba(0,0,0,0)),
+      radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.4), rgba(0,0,0,0)) 100% 0;
+    background-color: #1f2937; /* bg-gray-800 */
+    background-repeat: no-repeat;
+    background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+    background-attachment: local, local, scroll, scroll;
+  }
+</style>
 </head>
   <body class="bg-gray-50 dark:bg-gray-900">
     <div id="root"></div>

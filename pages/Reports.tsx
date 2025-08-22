@@ -171,7 +171,7 @@ const Reports: React.FC = () => {
             {hasData && (
                  <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
                     <div className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div className="border-b border-gray-200 dark:border-gray-700">
+                        <div className="border-b border-gray-200 dark:border-gray-700 w-full sm:w-auto">
                             <nav className="-mb-px flex space-x-6" aria-label="Tabs">
                                 <button onClick={() => setActiveTab('summary')} className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm ${activeTab === 'summary' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
                                 Ringkasan Siswa
@@ -181,7 +181,7 @@ const Reports: React.FC = () => {
                                 </button>
                             </nav>
                         </div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 self-start sm:self-center">
                             <button onClick={() => generatePdf(reportData, studentSummary)} className="flex items-center gap-2 px-4 py-2 text-sm text-red-700 bg-red-100 rounded-md hover:bg-red-200">
                                 <DownloadIcon className="w-4 h-4" /> PDF
                             </button>
@@ -191,8 +191,12 @@ const Reports: React.FC = () => {
                         </div>
                     </div>
 
+                    <div className="p-2 sm:hidden text-center text-xs text-gray-500 dark:text-gray-400">
+                      <p>Geser tabel untuk melihat semua kolom &rarr;</p>
+                    </div>
+
                     {/* Tab Content */}
-                    <div className="overflow-x-auto">
+                    <div className="responsive-table-container">
                         {activeTab === 'summary' && (
                             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                 <thead className="bg-gray-50 dark:bg-gray-700">
@@ -235,7 +239,7 @@ const Reports: React.FC = () => {
                                             <td className="td">{row.timestamp}</td>
                                             <td className="td">{row.studentName}</td>
                                             <td className="td">{row.studentClass}</td>
-                                            <td className="td">{row.violations}</td>
+                                            <td className="td min-w-[200px]">{row.violations}</td>
                                             <td className="td text-center">{row.totalPoints}</td>
                                             <td className="td">{row.teacherName}</td>
                                         </tr>

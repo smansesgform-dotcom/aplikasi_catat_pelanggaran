@@ -212,11 +212,11 @@ const Admin: React.FC = () => {
                     <div>
                         <h4 className="font-semibold text-gray-700 dark:text-gray-300">Backup Data</h4>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Unduh data saat ini sebagai file JSON.</p>
-                        <div className="flex flex-wrap gap-3">
-                            <button onClick={() => handleBackup('students')} disabled={isLoading} className="btn-secondary">Backup Siswa</button>
-                            <button onClick={() => handleBackup('teachers')} disabled={isLoading} className="btn-secondary">Backup Guru</button>
-                            <button onClick={() => handleBackup('violations')} disabled={isLoading} className="btn-secondary">Backup Pelanggaran</button>
-                            <button onClick={handleBackupAll} disabled={isLoading} className="btn-primary">Backup Semua Data</button>
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+                            <button onClick={() => handleBackup('students')} disabled={isLoading} className="btn-secondary w-full sm:w-auto">Backup Siswa</button>
+                            <button onClick={() => handleBackup('teachers')} disabled={isLoading} className="btn-secondary w-full sm:w-auto">Backup Guru</button>
+                            <button onClick={() => handleBackup('violations')} disabled={isLoading} className="btn-secondary w-full sm:w-auto">Backup Pelanggaran</button>
+                            <button onClick={handleBackupAll} disabled={isLoading} className="btn-primary w-full sm:w-auto">Backup Semua Data</button>
                         </div>
                     </div>
                      <div>
@@ -237,11 +237,11 @@ const Admin: React.FC = () => {
             {renderSection("Zona Berbahaya", (
                 <div className="border-2 border-red-500/50 rounded-lg p-4 space-y-4">
                     <p className="text-sm text-red-600 dark:text-red-300">Tindakan di bawah ini bersifat permanen dan tidak dapat diurungkan. Lanjutkan dengan hati-hati.</p>
-                    <div className="flex flex-wrap gap-3">
-                       <button onClick={() => handleDelete('students')} disabled={isLoading} className="btn-danger">Hapus Semua Siswa</button>
-                       <button onClick={() => handleDelete('teachers')} disabled={isLoading} className="btn-danger">Hapus Semua Guru</button>
-                       <button onClick={() => handleDelete('violations')} disabled={isLoading} className="btn-danger">Hapus Semua Pelanggaran</button>
-                       <button onClick={() => handleDelete('all')} disabled={isLoading} className="btn-danger font-bold">HAPUS SEMUA DATA APLIKASI</button>
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+                       <button onClick={() => handleDelete('students')} disabled={isLoading} className="btn-danger w-full sm:w-auto">Hapus Semua Siswa</button>
+                       <button onClick={() => handleDelete('teachers')} disabled={isLoading} className="btn-danger w-full sm:w-auto">Hapus Semua Guru</button>
+                       <button onClick={() => handleDelete('violations')} disabled={isLoading} className="btn-danger w-full sm:w-auto">Hapus Semua Pelanggaran</button>
+                       <button onClick={() => handleDelete('all')} disabled={isLoading} className="btn-danger font-bold w-full sm:w-auto">HAPUS SEMUA DATA APLIKASI</button>
                     </div>
                 </div>
             ))}

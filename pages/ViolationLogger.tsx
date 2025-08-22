@@ -171,7 +171,7 @@ const ViolationLogger: React.FC = () => {
             onClose={() => setIsCameraOpen(false)} 
         />
       )}
-      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6 sm:p-8">
+      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-4 sm:p-8">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Form Pencatatan Pelanggaran</h2>
         
         {statusMessage && (
@@ -225,7 +225,7 @@ const ViolationLogger: React.FC = () => {
             </div>
 
             {photoPreviews.length > 0 && (
-                <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                <div className="mt-4 grid grid-cols-4 sm:grid-cols-5 gap-4">
                     {photoPreviews.map((src, index) => (
                         <div key={src} className="relative group aspect-square">
                             <img src={src} alt={`Preview ${index + 1}`} className="h-full w-full object-cover rounded-md" />
