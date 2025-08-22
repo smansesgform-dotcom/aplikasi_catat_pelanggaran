@@ -12,7 +12,7 @@ const GoogleIcon = () => (
     </svg>
 );
 
-const SCHOOL_SHORT_NAME = "SMA Impian Bangsa";
+const SCHOOL_SHORT_NAME = import.meta.env.VITE_SCHOOL_SHORT_NAME || "Sekolah";
 
 const Login: React.FC = () => {
     const [password, setPassword] = useState('');

@@ -4,7 +4,7 @@ import { getTeacherByEmail } from '../services/supabaseService';
 import type { AuthUser } from '../types';
 import type { Session } from '@supabase/supabase-js';
 
-const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD;
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 interface AuthContextType {
   user: AuthUser | null;

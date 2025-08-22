@@ -189,7 +189,7 @@ Sekarang saatnya "menerbitkan" aplikasi Anda agar bisa diakses oleh siapa saja m
     - Vercel akan menampilkan daftar repositori dari akun GitHub Anda. Temukan repositori aplikasi yang sudah Anda *fork* tadi dan klik **"Import"**.
 3.  **Konfigurasi Proyek**:
     - **Project Name**: Biarkan default atau ubah sesuai keinginan.
-    - **Framework Preset**: Pastikan terpilih `Other`.
+    - **PENTING! Framework Preset**: Klik dropdown dan pilih **`Vite`**. Ini adalah langkah kunci agar Vercel tahu cara membangun aplikasi Anda dengan benar.
     - Buka bagian **Environment Variables**. Di sinilah kita akan memasukkan semua "kunci rahasia" dan pengaturan.
 4.  **Isi Environment Variables**:
     - Di file kode aplikasi, ada file bernama `env.txt`. Kita akan mengisi nilai-nilai ini di Vercel.
@@ -208,16 +208,11 @@ Sekarang saatnya "menerbitkan" aplikasi Anda agar bisa diakses oleh siapa saja m
 
 ---
 
-### Langkah 5: Sentuhan Terakhir (PENTING!)
+### Langkah 5: Sentuhan Terakhir
 
-Setelah Vercel selesai, aplikasi Anda sudah online! Vercel akan memberikan Anda sebuah URL (misalnya, `nama-proyek-anda.vercel.app`). Ada satu hal terakhir yang harus dilakukan.
+Setelah Vercel selesai, aplikasi Anda sudah online! Vercel akan memberikan Anda sebuah URL (misalnya, `nama-proyek-anda.vercel.app`).
 
-1.  **Salin (copy) URL aplikasi Anda dari Vercel**.
-2.  Kembali ke *dashboard* **Supabase** Anda.
-3.  Pergi ke **Authentication -> URL Configuration**.
-4.  Di bawah **Redirect URLs**, **tambahkan URL dari Vercel tadi**. Ini memberitahu Supabase bahwa login dari alamat web tersebut aman.
-5.  Kembali ke **Google Cloud Console** (di halaman Credentials -> OAuth client ID Anda).
-6.  Di bawah **"Authorized redirect URIs"**, klik **"+ ADD URI"** dan **tambahkan juga URL dari Vercel**.
+**Salin (copy) URL aplikasi Anda dari Vercel** dan tambahkan sebagai **Redirect URL** tambahan di Supabase dan Google Cloud Console jika diperlukan, terutama untuk memastikan login berfungsi dari domain baru Anda.
 
 ## Selesai!
 

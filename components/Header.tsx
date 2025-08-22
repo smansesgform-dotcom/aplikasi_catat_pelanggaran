@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const SCHOOL_NAME = process.env.VITE_SCHOOL_NAME || "Aplikasi Pelanggaran";
+const SCHOOL_NAME = import.meta.env.VITE_SCHOOL_NAME || "Aplikasi Pelanggaran";
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();

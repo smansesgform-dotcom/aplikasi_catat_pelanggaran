@@ -64,7 +64,7 @@ export const generatePdf = (detailedData: EnrichedViolationRecord[], summaryData
     format: 'a4'
   });
 
-  const schoolName = "Sekolah Menengah Atas Impian Bangsa";
+  const schoolName = import.meta.env.VITE_SCHOOL_NAME || "Laporan Pelanggaran Sekolah";
   const reportTitle = "Laporan Pelanggaran Siswa";
   const generationDate = `Dibuat pada: ${new Date().toLocaleString('id-ID')}`;
   const pageMargin = 15;
