@@ -9,15 +9,27 @@ import type { Student, Teacher, Violation, ViolationRecord, ReportFilters, Enric
  * @returns A user-friendly error string.
  */
 const parseSupabaseUploadError = (error: any): string => {
-  if (error.message.includes('duplicate key value violates unique constraint')) {
-    if (error.message.includes('students_nipd_key')) return `NIPD sudah ada.`;
-    if (error.message.includes('students_nisn_key')) return `NISN sudah ada.`;
-    if (error.message.includes('teachers_email_key')) return `Email guru sudah ada.`;
-    if (error.message.includes('teachers_nip_key')) return `NIP guru sudah ada.`;
-    if (error.message.includes('violations_name_key')) return `Nama pelanggaran sudah ada.`;
+  const message = error.message || '';
+  if (message.includes('duplicate key value violates unique constraint')) {
+    if (message.includes('students_nipd_key')) return `NIPD duplikat.`;
+    if (message.includes('students_nisn_key')) return `NISN duplikat.`;
+    if (message.includes('teachers_email_key')) return `Email guru duplikat.`;
+    if (message.includes('teachers_nip_key')) return `NIP guru duplikat.`;
+    if (message.includes('violations_name_key')) return `Nama pelanggaran duplikat.`;
     return 'Ditemukan data duplikat.';
   }
-  return 'Terjadi kesalahan tidak dikenal.';
+  if (message.includes('violates not-null constraint')) {
+    const columnMatch = message.match(/column "(\w+)"/);
+    if (columnMatch) {
+      return `Kolom '${columnMatch[1]}' tidak boleh kosong.`;
+    }
+    return 'Salah satu kolom wajib tidak diisi.';
+  }
+  if (message.includes('check constraint')) {
+      if (message.includes('students_gender_check')) return "Kolom 'gender' hanya boleh diisi 'L' atau 'P'.";
+      if (message.includes('violations_points_check')) return "Kolom 'points' harus lebih besar dari 0.";
+  }
+  return 'Terjadi kesalahan tidak dikenal. Periksa format data.';
 };
 
 
@@ -189,53 +201,71 @@ export const getViolationRecords = async (filters: ReportFilters): Promise<Enric
   return enrichedRecords.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };
 
-// --- Admin Bulk Upload Functions (Row-by-Row for Detailed Feedback) ---
+// --- Admin Bulk Upload Functions (Chunking with Fallback) ---
 
 interface UploadResult {
   successCount: number;
   failures: { row: number, name: string, reason: string }[];
 }
 
-export const uploadStudents = async (data: Omit<Student, 'id'>[]): Promise<UploadResult> => {
+/**
+ * Generic function to upload data in chunks with a row-by-row fallback for failed chunks.
+ * @param tableName - The name of the table to insert into.
+ * @param data - The array of data to upload.
+ * @param nameField - The field to use for the 'name' in failure reports.
+ */
+const chunkedUpload = async <T extends { [key: string]: any }>(
+  tableName: 'students' | 'teachers' | 'violations',
+  data: T[],
+  nameField: keyof T
+): Promise<UploadResult> => {
   const result: UploadResult = { successCount: 0, failures: [] };
-  for (let i = 0; i < data.length; i++) {
-    const student = data[i];
-    const { error } = await supabase.from('students').insert(student);
-    if (error) {
-      result.failures.push({ row: i + 2, name: student.name, reason: parseSupabaseUploadError(error) });
+  const CHUNK_SIZE = 250; // A balance between speed and avoiding timeouts
+
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    
+    // Fast path: try to insert the whole chunk
+    const { error: chunkError } = await supabase.from(tableName).insert(chunk);
+    
+    if (chunkError) {
+      // Slow path (fallback): if the chunk fails, process it row-by-row
+      console.warn(`Chunk failed, falling back to row-by-row for chunk starting at index ${i}. Error: ${chunkError.message}`);
+      for (let j = 0; j < chunk.length; j++) {
+        const rowData = chunk[j];
+        const originalIndex = i + j;
+        const { error: rowError } = await supabase.from(tableName).insert(rowData);
+        
+        if (rowError) {
+          result.failures.push({ 
+            row: originalIndex + 2, // +2 to account for header and 0-based index
+            name: rowData[nameField]?.toString() || 'N/A', 
+            reason: parseSupabaseUploadError(rowError) 
+          });
+        } else {
+          result.successCount++;
+        }
+      }
     } else {
-      result.successCount++;
+      // If chunk succeeds, all rows are successful
+      result.successCount += chunk.length;
     }
   }
+  
   return result;
 };
 
-export const uploadTeachers = async (data: Omit<Teacher, 'id'>[]): Promise<UploadResult> => {
-  const result: UploadResult = { successCount: 0, failures: [] };
-  for (let i = 0; i < data.length; i++) {
-    const teacher = data[i];
-    const { error } = await supabase.from('teachers').insert(teacher);
-    if (error) {
-      result.failures.push({ row: i + 2, name: teacher.name, reason: parseSupabaseUploadError(error) });
-    } else {
-      result.successCount++;
-    }
-  }
-  return result;
+
+export const uploadStudents = (data: Omit<Student, 'id'>[]): Promise<UploadResult> => {
+  return chunkedUpload('students', data, 'name');
 };
 
-export const uploadViolations = async (data: Omit<Violation, 'id'>[]): Promise<UploadResult> => {
-  const result: UploadResult = { successCount: 0, failures: [] };
-  for (let i = 0; i < data.length; i++) {
-    const violation = data[i];
-    const { error } = await supabase.from('violations').insert(violation);
-    if (error) {
-      result.failures.push({ row: i + 2, name: violation.name, reason: parseSupabaseUploadError(error) });
-    } else {
-      result.successCount++;
-    }
-  }
-  return result;
+export const uploadTeachers = (data: Omit<Teacher, 'id'>[]): Promise<UploadResult> => {
+  return chunkedUpload('teachers', data, 'name');
+};
+
+export const uploadViolations = (data: Omit<Violation, 'id'>[]): Promise<UploadResult> => {
+  return chunkedUpload('violations', data, 'name');
 };
 
 
