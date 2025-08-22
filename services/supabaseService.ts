@@ -9,15 +9,20 @@ import type { Student, Teacher, Violation, ViolationRecord, ReportFilters, Enric
  * @returns A user-friendly error string.
  */
 const parseSupabaseUploadError = (error: any): string => {
-  const message = error.message || '';
+  const message = error?.message || '';
+  const details = error?.details || '';
+
+  // Handle unique constraint violations
   if (message.includes('duplicate key value violates unique constraint')) {
-    if (message.includes('students_nipd_key')) return `NIPD duplikat.`;
-    if (message.includes('students_nisn_key')) return `NISN duplikat.`;
-    if (message.includes('teachers_email_key')) return `Email guru duplikat.`;
-    if (message.includes('teachers_nip_key')) return `NIP guru duplikat.`;
-    if (message.includes('violations_name_key')) return `Nama pelanggaran duplikat.`;
+    if (details.includes('students_nipd_key')) return `NIPD duplikat.`;
+    if (details.includes('students_nisn_key')) return `NISN duplikat.`;
+    if (details.includes('teachers_email_key')) return `Email guru duplikat.`;
+    if (details.includes('teachers_nip_key')) return `NIP guru duplikat.`;
+    if (details.includes('violations_name_key')) return `Nama pelanggaran duplikat.`;
     return 'Ditemukan data duplikat.';
   }
+
+  // Handle not-null violations
   if (message.includes('violates not-null constraint')) {
     const columnMatch = message.match(/column "(\w+)"/);
     if (columnMatch) {
@@ -25,12 +30,37 @@ const parseSupabaseUploadError = (error: any): string => {
     }
     return 'Salah satu kolom wajib tidak diisi.';
   }
-  if (message.includes('check constraint')) {
-      if (message.includes('students_gender_check')) return "Kolom 'gender' hanya boleh diisi 'L' atau 'P'.";
-      if (message.includes('violations_points_check')) return "Kolom 'points' harus lebih besar dari 0.";
+
+  // Handle check constraint violations
+  if (message.includes('violates check constraint')) {
+      if (details.includes('students_gender_check')) return "Kolom 'gender' hanya boleh diisi 'L' atau 'P'.";
+      if (details.includes('violations_points_check')) return "Kolom 'points' harus angka lebih besar dari 0.";
   }
-  return 'Terjadi kesalahan tidak dikenal. Periksa format data.';
+  
+  // Fallback to the original, more detailed error message
+  console.error("Unknown Supabase Error:", error);
+  return `Terjadi kesalahan. Pesan database: ${message}`;
 };
+
+// Data Sanitization Functions
+const sanitizeStudent = (row: any): Omit<Student, 'id'> => ({
+    nipd: String(row.nipd || '').trim(),
+    nisn: String(row.nisn || '').trim(),
+    name: String(row.name || '').trim(),
+    gender: String(row.gender || '').trim().toUpperCase() as 'L' | 'P',
+    class: String(row.class || '').trim(),
+});
+
+const sanitizeTeacher = (row: any): Omit<Teacher, 'id'> => ({
+    name: String(row.name || '').trim(),
+    nip: String(row.nip || '').trim(),
+    email: String(row.email || '').trim().toLowerCase(),
+});
+
+const sanitizeViolation = (row: any): Omit<Violation, 'id'> => ({
+    name: String(row.name || '').trim(),
+    points: Number(row.points) || 0,
+});
 
 
 // --- Authentication & User Functions ---
@@ -256,16 +286,31 @@ const chunkedUpload = async <T extends { [key: string]: any }>(
 };
 
 
-export const uploadStudents = (data: Omit<Student, 'id'>[]): Promise<UploadResult> => {
-  return chunkedUpload('students', data, 'name');
+export const uploadStudents = (data: any[]): Promise<UploadResult> => {
+  try {
+    const sanitizedData = data.map(sanitizeStudent);
+    return chunkedUpload('students', sanitizedData, 'name');
+  } catch (e: any) {
+    return Promise.reject(new Error(`Gagal memproses data dari file: ${e.message}`));
+  }
 };
 
-export const uploadTeachers = (data: Omit<Teacher, 'id'>[]): Promise<UploadResult> => {
-  return chunkedUpload('teachers', data, 'name');
+export const uploadTeachers = (data: any[]): Promise<UploadResult> => {
+   try {
+    const sanitizedData = data.map(sanitizeTeacher);
+    return chunkedUpload('teachers', sanitizedData, 'name');
+   } catch (e: any) {
+    return Promise.reject(new Error(`Gagal memproses data dari file: ${e.message}`));
+   }
 };
 
-export const uploadViolations = (data: Omit<Violation, 'id'>[]): Promise<UploadResult> => {
-  return chunkedUpload('violations', data, 'name');
+export const uploadViolations = (data: any[]): Promise<UploadResult> => {
+  try {
+    const sanitizedData = data.map(sanitizeViolation);
+    return chunkedUpload('violations', sanitizedData, 'name');
+  } catch(e: any) {
+    return Promise.reject(new Error(`Gagal memproses data dari file: ${e.message}`));
+  }
 };
 
 
