@@ -81,7 +81,7 @@ Setiap aplikasi butuh tempat untuk menyimpan data (seperti daftar siswa, guru, d
     -- Tabel utama untuk mencatat setiap insiden pelanggaran
     CREATE TABLE violation_records (
       id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-      teacher_id BIGINT NOT NULL REFERENCES teachers(id),
+      teacher_id BIGINT NOT NULL REFERENCES teachers(id) ON DELETE SET NULL,
       student_ids INT[] NOT NULL, -- Array of student IDs
       violation_ids INT[] NOT NULL, -- Array of violation IDs
       photo_urls TEXT[], -- Array of photo URLs
@@ -111,6 +111,39 @@ Setiap aplikasi butuh tempat untuk menyimpan data (seperti daftar siswa, guru, d
     CREATE POLICY "Allow authenticated delete" ON students FOR DELETE USING (auth.role() = 'authenticated');
     CREATE POLICY "Allow authenticated delete" ON teachers FOR DELETE USING (auth.role() = 'authenticated');
     CREATE POLICY "Allow authenticated delete" ON violations FOR DELETE USING (auth.role() = 'authenticated');
+    CREATE POLICY "Allow authenticated delete" ON violation_records FOR DELETE USING (auth.role() = 'authenticated');
+
+    -- ---
+    -- FUNGSI DATABASE (RPC) UNTUK MANAJEMEN DATA
+    -- ---
+    -- Catatan: Fungsi di bawah ini menggunakan `SECURITY DEFINER`. Ini berarti fungsi berjalan
+    -- dengan hak akses dari pemilik fungsi (biasanya admin database), yang memungkinkannya
+    -- untuk melakukan operasi hapus massal dengan aman dan cepat. Izin untuk MENJALANKAN 
+    -- fungsi ini tetap dibatasi hanya untuk pengguna yang sudah login (`authenticated`).
+
+    -- Fungsi untuk menghapus semua data dari tabel yang diizinkan dan mereset ID sequence
+    CREATE OR REPLACE FUNCTION truncate_tables(table_names TEXT[])
+    RETURNS VOID AS $$
+    DECLARE
+        table_name TEXT;
+    BEGIN
+        -- Loop melalui setiap nama tabel yang diberikan
+        FOREACH table_name IN ARRAY table_names
+        LOOP
+            -- Validasi untuk memastikan hanya tabel yang aman yang bisa diubah
+            IF table_name IN ('students', 'teachers', 'violations', 'violation_records') THEN
+                -- TRUNCATE menghapus semua data dengan cepat dan RESTART IDENTITY mereset auto-increment ID
+                EXECUTE format('TRUNCATE TABLE public.%I RESTART IDENTITY CASCADE', table_name);
+            ELSE
+                -- Jika nama tabel tidak valid, lemparkan error
+                RAISE EXCEPTION 'Operasi TRUNCATE tidak diizinkan untuk tabel: %', table_name;
+            END IF;
+        END LOOP;
+    END;
+    $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+    -- Memberikan izin kepada pengguna yang sudah login untuk menjalankan fungsi ini
+    GRANT EXECUTE ON FUNCTION truncate_tables(TEXT[]) TO authenticated;
     ```
     - Klik tombol hijau **"RUN"**. Jika berhasil, Anda akan melihat pesan "Success. No rows returned".
 4.  **Siapkan "Gudang Foto" (Storage)**:
@@ -220,3 +253,10 @@ Aplikasi Anda kini sudah sepenuhnya berfungsi dan online! Anda bisa mengunjungi 
 
 - **Untuk login sebagai guru**: Gunakan tombol "Masuk dengan Google". Pastikan email Google Anda sudah ditambahkan ke tabel `teachers` di Supabase.
 - **Untuk login sebagai admin**: Gunakan form login admin dan masukkan kata sandi yang Anda atur di Vercel (`VITE_ADMIN_PASSWORD`).
+
+## Catatan Tambahan: Batasan Unggah Data
+
+Supabase memiliki batasan teknis di mana aplikasi klien (seperti aplikasi web ini) hanya dapat mengirim sekitar 1000 baris data dalam satu kali permintaan. Aplikasi ini menangani batasan tersebut sebagai berikut:
+- **Unggah Data Excel**: Untuk menjaga integritas data dan memberikan umpan balik yang baik, aplikasi memproses data baris per baris. Ini memungkinkan unggahan file besar namun mungkin memakan waktu lebih lama.
+- **Backup & Restore**: Fitur backup dan restore dapat menangani data lebih dari 1000 baris dengan memprosesnya secara cerdas dalam potongan-potongan yang lebih kecil.
+- **Rekomendasi**: Jika Anda memiliki file Excel dengan lebih dari 1000 baris, disarankan untuk membaginya menjadi beberapa file yang lebih kecil untuk proses unggah yang lebih lancar.

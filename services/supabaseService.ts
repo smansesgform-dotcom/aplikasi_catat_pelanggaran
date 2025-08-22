@@ -1,6 +1,26 @@
 import { supabase } from './supabaseClient';
 import type { Student, Teacher, Violation, ViolationRecord, ReportFilters, EnrichedViolationRecord } from '../types';
 
+// --- Helper Functions ---
+
+/**
+ * Menerjemahkan error teknis dari Supabase menjadi pesan yang mudah dipahami.
+ * @param error Error object from Supabase.
+ * @returns A user-friendly error string.
+ */
+const parseSupabaseUploadError = (error: any): string => {
+  if (error.message.includes('duplicate key value violates unique constraint')) {
+    if (error.message.includes('students_nipd_key')) return `NIPD sudah ada.`;
+    if (error.message.includes('students_nisn_key')) return `NISN sudah ada.`;
+    if (error.message.includes('teachers_email_key')) return `Email guru sudah ada.`;
+    if (error.message.includes('teachers_nip_key')) return `NIP guru sudah ada.`;
+    if (error.message.includes('violations_name_key')) return `Nama pelanggaran sudah ada.`;
+    return 'Ditemukan data duplikat.';
+  }
+  return 'Terjadi kesalahan tidak dikenal.';
+};
+
+
 // --- Authentication & User Functions ---
 
 export const getTeacherByEmail = async (email: string): Promise<Teacher | null> => {
@@ -121,7 +141,6 @@ export const getViolationRecords = async (filters: ReportFilters): Promise<Enric
 
   if (!records || records.length === 0) return [];
 
-  // Fetch all related data for client-side enrichment
   const [
     { data: allStudents },
     { data: allTeachers },
@@ -152,7 +171,6 @@ export const getViolationRecords = async (filters: ReportFilters): Promise<Enric
           const student = studentMap.get(studentId);
           if (!student) continue;
 
-          // Client-side filtering for student and class
           if (filters.studentIds.length > 0 && !filters.studentIds.includes(student.id)) continue;
           if (filters.class && student.class !== filters.class) continue;
 
@@ -171,67 +189,111 @@ export const getViolationRecords = async (filters: ReportFilters): Promise<Enric
   return enrichedRecords.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };
 
-// --- Admin Bulk Upload Functions ---
+// --- Admin Bulk Upload Functions (Row-by-Row for Detailed Feedback) ---
 
-export const uploadStudents = async (data: Omit<Student, 'id'>[]): Promise<{ count: number }> => {
-  const { count, error } = await supabase.from('students').insert(data);
-  if (error) {
-    console.error("Error uploading students:", error);
-    throw new Error(`Gagal mengunggah data siswa: ${error.message}`);
+interface UploadResult {
+  successCount: number;
+  failures: { row: number, name: string, reason: string }[];
+}
+
+export const uploadStudents = async (data: Omit<Student, 'id'>[]): Promise<UploadResult> => {
+  const result: UploadResult = { successCount: 0, failures: [] };
+  for (let i = 0; i < data.length; i++) {
+    const student = data[i];
+    const { error } = await supabase.from('students').insert(student);
+    if (error) {
+      result.failures.push({ row: i + 2, name: student.name, reason: parseSupabaseUploadError(error) });
+    } else {
+      result.successCount++;
+    }
   }
-  return { count: count ?? 0 };
+  return result;
 };
 
-export const uploadTeachers = async (data: Omit<Teacher, 'id'>[]): Promise<{ count: number }> => {
-  const { count, error } = await supabase.from('teachers').insert(data);
-  if (error) {
-    console.error("Error uploading teachers:", error);
-    throw new Error(`Gagal mengunggah data guru: ${error.message}`);
+export const uploadTeachers = async (data: Omit<Teacher, 'id'>[]): Promise<UploadResult> => {
+  const result: UploadResult = { successCount: 0, failures: [] };
+  for (let i = 0; i < data.length; i++) {
+    const teacher = data[i];
+    const { error } = await supabase.from('teachers').insert(teacher);
+    if (error) {
+      result.failures.push({ row: i + 2, name: teacher.name, reason: parseSupabaseUploadError(error) });
+    } else {
+      result.successCount++;
+    }
   }
-  return { count: count ?? 0 };
+  return result;
 };
 
-export const uploadViolations = async (data: Omit<Violation, 'id'>[]): Promise<{ count: number }> => {
-  const { count, error } = await supabase.from('violations').insert(data);
-  if (error) {
-    console.error("Error uploading violations:", error);
-    throw new Error(`Gagal mengunggah data pelanggaran: ${error.message}`);
+export const uploadViolations = async (data: Omit<Violation, 'id'>[]): Promise<UploadResult> => {
+  const result: UploadResult = { successCount: 0, failures: [] };
+  for (let i = 0; i < data.length; i++) {
+    const violation = data[i];
+    const { error } = await supabase.from('violations').insert(violation);
+    if (error) {
+      result.failures.push({ row: i + 2, name: violation.name, reason: parseSupabaseUploadError(error) });
+    } else {
+      result.successCount++;
+    }
   }
-  return { count: count ?? 0 };
+  return result;
 };
+
 
 // --- Admin Data Management Functions ---
 
 export const backupTable = async (tableName: 'students' | 'teachers' | 'violations'): Promise<any[]> => {
-  const { data, error } = await supabase.from(tableName).select('*').order('id');
-  if (error) {
-    console.error(`Error backing up ${tableName}:`, error);
-    throw new Error(`Gagal membuat backup data ${tableName}.`);
-  }
-  return data;
-};
-
-export const deleteAllFromTable = async (tableName: 'students' | 'teachers' | 'violations'): Promise<{ count: number | null }> => {
-  // NOTE: This requires RLS policy to allow DELETE for authenticated users.
-  const { count, error } = await supabase.from(tableName).delete().neq('id', -1); // Deletes all rows matching filter
-  if (error) {
-    console.error(`Error deleting from ${tableName}:`, error);
-    throw new Error(`Gagal menghapus data dari ${tableName}: ${error.message}`);
-  }
-  return { count };
-};
-
-export const restoreTable = async (tableName: 'students' | 'teachers' | 'violations', data: any[]): Promise<{ count: number | null }> => {
-  // 1. Delete all existing data
-  await deleteAllFromTable(tableName);
+  const allData: any[] = [];
+  const CHUNK_SIZE = 1000;
+  let offset = 0;
   
-  // 2. Insert new data (ids and created_at will be auto-generated)
+  while (true) {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .order('id')
+      .range(offset, offset + CHUNK_SIZE - 1);
+
+    if (error) {
+      console.error(`Error backing up ${tableName}:`, error);
+      throw new Error(`Gagal membuat backup data ${tableName}.`);
+    }
+
+    if (data && data.length > 0) {
+      allData.push(...data);
+      offset += CHUNK_SIZE;
+    } else {
+      break; 
+    }
+  }
+  return allData;
+};
+
+export const deleteAllFromTables = async (tableNames: ('students' | 'teachers' | 'violations' | 'violation_records')[]): Promise<void> => {
+  const { error } = await supabase.rpc('truncate_tables', { table_names: tableNames });
+  if (error) {
+    console.error(`Error deleting from tables:`, error);
+    throw new Error(`Gagal menghapus data: ${error.message}`);
+  }
+};
+
+export const restoreData = async (tableName: 'students' | 'teachers' | 'violations', data: any[]): Promise<{ count: number }> => {
+  // 1. Delete all existing data using the robust RPC function
+  await deleteAllFromTables([tableName]);
+  
+  // 2. Insert new data in chunks to respect the 1000-row limit
+  const CHUNK_SIZE = 1000;
   const dataToInsert = data.map(({ id, created_at, ...rest }) => rest);
-  const { count, error } = await supabase.from(tableName).insert(dataToInsert);
-  
-  if (error) {
-    console.error(`Error restoring ${tableName}:`, error);
-    throw new Error(`Gagal memulihkan data ke ${tableName}: ${error.message}`);
+  let totalCount = 0;
+
+  for (let i = 0; i < dataToInsert.length; i += CHUNK_SIZE) {
+    const chunk = dataToInsert.slice(i, i + CHUNK_SIZE);
+    const { error, count } = await supabase.from(tableName).insert(chunk);
+    
+    if (error) {
+      console.error(`Error restoring chunk to ${tableName}:`, error);
+      throw new Error(`Gagal memulihkan data ke ${tableName} pada baris ${i + 1}: ${error.message}. Data mungkin tidak lengkap.`);
+    }
+    totalCount += count ?? 0;
   }
-  return { count };
+  return { count: totalCount };
 };

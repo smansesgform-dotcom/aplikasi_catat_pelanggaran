@@ -3,11 +3,11 @@ import FileUpload from '../components/FileUpload';
 import PasswordConfirmationModal from '../components/PasswordConfirmationModal';
 import { 
     uploadStudents, uploadTeachers, uploadViolations,
-    backupTable, deleteAllFromTable, restoreTable
+    backupTable, deleteAllFromTables, restoreData
 } from '../services/supabaseService';
 import type { AllDataBackup } from '../types';
 
-const studentTemplate = [{ nipd: '12345', nisn: '54321', name: 'Contoh Siswa', gender: 'L', class: 'X IPA 1' }];
+const studentTemplate = [{ nipd: '12345', nisn: '0012345678', name: 'Contoh Siswa', gender: 'L', class: 'X IPA 1' }];
 const teacherTemplate = [{ name: 'Contoh Guru, S.Pd.', nip: '198001012005011001', email: 'guru@sekolah.id' }];
 const violationTemplate = [{ name: 'Contoh Pelanggaran', points: 10 }];
 
@@ -106,11 +106,11 @@ const Admin: React.FC = () => {
                     async () => {
                         if(isAllDataBackup){
                             await handleAction(
-                                async () => Promise.all([
-                                    restoreTable('students', json.students),
-                                    restoreTable('teachers', json.teachers),
-                                    restoreTable('violations', json.violations)
-                                ]),
+                                async () => {
+                                    await restoreData('students', json.students);
+                                    await restoreData('teachers', json.teachers);
+                                    await restoreData('violations', json.violations);
+                                },
                                 `Semua data berhasil dipulihkan.`,
                                 `Gagal memulihkan semua data`
                             );
@@ -123,7 +123,7 @@ const Admin: React.FC = () => {
                             
                             if (tableName) {
                                 await handleAction(
-                                    async () => restoreTable(tableName!, json),
+                                    async () => restoreData(tableName!, json),
                                     `Data ${tableName} berhasil dipulihkan.`,
                                     `Gagal memulihkan data ${tableName}`
                                 );
@@ -155,15 +155,11 @@ const Admin: React.FC = () => {
             async () => {
                 await handleAction(
                     async () => {
-                        if (tableName === 'all') {
-                            await Promise.all([
-                                deleteAllFromTable('students'),
-                                deleteAllFromTable('teachers'),
-                                deleteAllFromTable('violations')
-                            ]);
-                        } else {
-                            await deleteAllFromTable(tableName);
-                        }
+                        const tablesToDelete: ('students' | 'teachers' | 'violations' | 'violation_records')[] = 
+                            tableName === 'all' 
+                                ? ['students', 'teachers', 'violations', 'violation_records'] 
+                                : [tableName];
+                        await deleteAllFromTables(tablesToDelete);
                     },
                     `${target} berhasil dihapus.`,
                     `Gagal menghapus ${target}`

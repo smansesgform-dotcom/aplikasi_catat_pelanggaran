@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 
 const DownloadIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
       <polyline points="7 10 12 15 17 10"></polyline>
       <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -10,24 +10,34 @@ const DownloadIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 const UploadCloudIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
       <path d="M12 12v9"></path>
       <path d="m16 16-4-4-4 4"></path>
     </svg>
 );
 
+interface UploadFailure {
+  row: number;
+  name: string;
+  reason: string;
+}
+
+interface UploadResult {
+  successCount: number;
+  failures: UploadFailure[];
+}
 
 interface FileUploadProps {
   title: string;
   templateFileName: string;
   templateData: object[];
-  onUpload: (data: any[]) => Promise<{ count: number }>;
+  onUpload: (data: any[]) => Promise<UploadResult>;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ title, templateFileName, templateData, onUpload }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<{ type: 'info' | 'success' | 'error'; message: string } | null>(null);
+  const [status, setStatus] = useState<{ type: 'info' | 'success' | 'error' | 'warning'; message: string; failures?: UploadFailure[] } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +54,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ title, templateFileName, templa
       return;
     }
     setIsLoading(true);
-    setStatus({ type: 'info', message: 'Mengunggah dan memproses file...' });
+    setStatus({ type: 'info', message: 'Mengunggah dan memproses file... Ini mungkin memakan waktu beberapa saat.' });
 
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -57,12 +67,19 @@ const FileUpload: React.FC<FileUploadProps> = ({ title, templateFileName, templa
         
         const result = await onUpload(json);
 
-        setStatus({ type: 'success', message: `Berhasil! ${result.count} data berhasil diimpor.` });
+        if (result.failures.length > 0 && result.successCount > 0) {
+            setStatus({ type: 'warning', message: `Selesai dengan beberapa kegagalan. Berhasil: ${result.successCount}, Gagal: ${result.failures.length}.`, failures: result.failures });
+        } else if (result.failures.length > 0) {
+            setStatus({ type: 'error', message: `Gagal mengimpor semua data (${result.failures.length} baris).`, failures: result.failures });
+        } else {
+            setStatus({ type: 'success', message: `Berhasil! ${result.successCount} data berhasil diimpor.` });
+        }
+        
         setFile(null);
         if(fileInputRef.current) fileInputRef.current.value = "";
-      } catch (error) {
+      } catch (error: any) {
         console.error('Upload failed:', error);
-        setStatus({ type: 'error', message: 'Gagal memproses file. Pastikan formatnya sesuai template.' });
+        setStatus({ type: 'error', message: `Gagal: ${error.message}` });
       } finally {
         setIsLoading(false);
       }
@@ -110,9 +127,22 @@ const FileUpload: React.FC<FileUploadProps> = ({ title, templateFileName, templa
         <div className={`p-3 text-sm rounded-md ${
           status.type === 'success' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
           status.type === 'error' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+          status.type === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
           'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
         }`}>
-          {status.message}
+          <p className="font-semibold">{status.message}</p>
+          {status.failures && status.failures.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-current border-opacity-30">
+                <p className="font-bold mb-1">Detail Kegagalan:</p>
+                <ul className="list-disc list-inside max-h-40 overflow-y-auto">
+                    {status.failures.map((fail, index) => (
+                        <li key={index}>
+                            <span className="font-semibold">Baris {fail.row}:</span> "{fail.name}" - {fail.reason}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
