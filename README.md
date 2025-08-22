@@ -252,10 +252,69 @@ Sekarang saatnya "menerbitkan" aplikasi Anda agar bisa diakses oleh siapa saja m
 
 ### Langkah 5: Selesai!
 
-Setelah Vercel selesai, aplikasi Anda sudah online! Vercel akan memberikan Anda sebuah URL (misalnya, `nama-proyek-anda.vercel.app`).
+Setelah Vercel selesai, aplikasi Anda sudah online! Vercel akan memberikan Anda sebuah URL (misalnya, `nama-proyek-anda.vercel.app`). Kunjungi URL tersebut untuk mulai menggunakan aplikasi.
 
-- **Untuk login sebagai guru**: Gunakan tombol "Masuk dengan Google". Pastikan email Google Anda sudah ditambahkan ke tabel `teachers` di Supabase.
-- **Untuk login sebagai admin**: Gunakan form login admin dan masukkan kata sandi yang Anda atur di Vercel (`VITE_ADMIN_PASSWORD`).
+---
+
+### Langkah 6: Memulai Menggunakan Aplikasi
+
+Aplikasi Anda sudah online, sekarang saatnya menggunakannya! Berikut adalah panduan untuk Admin dan Guru.
+
+#### 👨‍💼 Panduan untuk Admin
+
+Sebagai Admin, Anda memiliki kontrol penuh atas seluruh data di aplikasi. Tugas pertama Anda adalah mengisi aplikasi dengan data master.
+
+1.  **Login Pertama Kali**:
+    - Buka URL aplikasi Anda.
+    - Anda akan melihat halaman login. Abaikan tombol Google.
+    - Cari kotak input bertuliskan **"Kata Sandi Admin"**.
+    - Masukkan kata sandi yang Anda atur di Vercel (`VITE_ADMIN_PASSWORD`).
+    - Klik **"Masuk sebagai Admin"**.
+
+2.  **Tugas Pertama: Mengunggah Data Master (Sangat Penting!)**:
+    - Setelah login, klik menu **"Admin"** di bagian atas.
+    - Aplikasi Anda saat ini masih kosong. Anda harus mengisinya dengan data siswa, guru, dan pelanggaran.
+    - **Ikuti urutan ini**:
+        1.  **Unggah Data Guru**:
+            - Di bagian "Unggah Data Guru", klik **"Unduh Template"**.
+            - Buka file Excel tersebut. Isi dengan data semua guru di sekolah Anda.
+            - **WAJIB**: Pastikan kolom `email` diisi dengan **alamat email Google aktif** milik masing-masing guru. Ini digunakan agar mereka bisa login.
+            - Simpan file, lalu kembali ke aplikasi dan unggah file tersebut.
+        2.  **Unggah Data Pelanggaran**:
+            - Lakukan hal yang sama: unduh template, isi dengan daftar pelanggaran dan poinnya, lalu unggah.
+        3.  **Unggah Data Siswa**:
+            - Terakhir, unduh template siswa, isi dengan data semua siswa, lalu unggah.
+
+3.  **Fitur Admin Lainnya**:
+    - **Manajemen Data**: Di sini Anda bisa membuat cadangan (backup) seluruh data ke dalam file JSON, atau memulihkan data dari file backup.
+    - **Zona Berbahaya**: Berhati-hatilah di sini. Anda bisa menghapus seluruh data siswa, guru, atau bahkan semua data di aplikasi secara permanen. Fitur ini berguna jika Anda ingin memulai dari awal.
+
+#### 👩‍🏫 Panduan untuk Guru
+
+Sebagai Guru, tugas utama Anda adalah mencatat pelanggaran dan melihat laporan.
+
+1.  **Login Pertama Kali**:
+    - Buka URL aplikasi Anda.
+    - Klik tombol **"Masuk dengan Google (untuk Guru)"**.
+    - Pilih akun Google Anda.
+    - **PENTING**: Anda hanya bisa login jika Admin sudah menambahkan email Google Anda ke dalam sistem. Jika Anda tidak bisa masuk, hubungi Admin untuk memastikan email Anda sudah terdaftar di data guru.
+
+2.  **Mencatat Pelanggaran (Tugas Utama)**:
+    - Setelah login, Anda akan langsung dibawa ke halaman **"Catat Pelanggaran"**.
+    - **Cari Siswa**: Ketik nama, NIPD, atau NISN siswa yang melanggar. Anda bisa memilih lebih dari satu siswa untuk pelanggaran yang sama.
+    - **Jenis Pelanggaran**: Ketik nama pelanggaran. Anda juga bisa memilih lebih dari satu jenis pelanggaran.
+    - **Bukti Foto (Opsional)**: Anda bisa mengambil foto langsung menggunakan kamera HP (`Ambil Foto`) atau mengunggah dari galeri (`Pilih dari Galeri`).
+    - **Guru Pelapor**: Kolom ini akan otomatis terisi dengan nama Anda.
+    - Klik **"Simpan Catatan"** jika semua sudah terisi.
+
+3.  **Melihat dan Mengunduh Laporan**:
+    - Klik menu **"Laporan"** di bagian atas.
+    - Gunakan filter di bagian atas (rentang tanggal, kelas, nama siswa, dll.) untuk mencari data yang Anda inginkan.
+    - Klik **"Buat Laporan"**.
+    - Hasilnya akan muncul di bawah dalam dua tab:
+        - **Ringkasan Siswa**: Menampilkan peringkat siswa berdasarkan total poin pelanggaran. Sangat berguna untuk melihat gambaran besar.
+        - **Laporan Rinci**: Menampilkan catatan setiap pelanggaran satu per satu.
+    - Anda bisa mengunduh laporan yang sudah difilter dalam format **PDF** atau **Excel**.
 
 ## Catatan Tambahan: Batasan Unggah Data
 
